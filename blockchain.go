@@ -61,7 +61,7 @@ func NewGenesisBlock() *Block {
 	return NewBlock("Genesis Block", []byte{})
 }
 
-func (bc *Blockchain) AddBlock(data string) {
+func (bc *Blockchain) AddBlock(data string) *Block {
 	var lastHash []byte
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -75,6 +75,7 @@ func (bc *Blockchain) AddBlock(data string) {
 	})
 	if err != nil {
 		log.Println(err)
+		return nil
 	}
 	newBlock := NewBlock(data, lastHash)
 	err = bc.db.Update(func(tx *bolt.Tx) error {
@@ -94,7 +95,10 @@ func (bc *Blockchain) AddBlock(data string) {
 		bc.lastBlockHash = newBlock.Hash
 		return nil
 	})
-	
+	if err != nil {
+		return nil
+	}
+	return newBlock
 }
 
 func (bc *Blockchain) Iterator() *BlockchainInterator {
