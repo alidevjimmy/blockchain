@@ -38,7 +38,6 @@ func (pow *PoorfOfWork) prepareData(nonce int) []byte {
 }
 
 // (nonce , hash)
-// what if we couldn't find nonce for computed hash is lower than target?
 func (pow *PoorfOfWork) Run() (int, []byte) {
 	var hashInt big.Int
 	var hash [32]byte

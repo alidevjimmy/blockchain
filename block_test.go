@@ -31,3 +31,27 @@ func TestSetHash(t *testing.T) {
 
 	assert.Equal(t, hash[:], block.Hash)
 }
+
+func TestSerialize(t *testing.T) {
+	data := "test block"
+	prevHash := []byte("prevHash")
+	block := NewBlock(data, prevHash)
+
+	s, err := block.Serialize()
+
+	assert.Nil(t, err)
+	assert.NotEqual(t, []byte{}, s)
+}
+
+func TestDeserializeBlock(t *testing.T) {
+	data := "test block"
+	prevHash := []byte("prevHash")
+	block := NewBlock(data, prevHash)
+
+	s, err := block.Serialize()
+	assert.Nil(t, err)
+	assert.NotEqual(t, []byte{}, s)
+
+	dBlock := DeserializeBlock(s)
+	assert.Equal(t, block, dBlock)
+}
