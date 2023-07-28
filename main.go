@@ -1,7 +1,7 @@
 package main
 
 func main() {
-	bc := NewBlockchain()
+	bc := NewBlockchain("default_address", "BTC")
 
 	cli := NewCLI(bc)
 

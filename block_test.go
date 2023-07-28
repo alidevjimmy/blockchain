@@ -10,32 +10,29 @@ import (
 )
 
 func TestNewBlock(t *testing.T) {
-	data := "test block"
-	block := NewBlock(data, []byte{})
-	assert.Equal(t, data, string(block.Data))
+	block := NewBlock([]*Transction{}, []byte{})
+	assert.Equal(t, []*Transction{}, []*Transction{})
 	assert.Equal(t, []byte{}, block.PrevBlockHash)
 	assert.Equal(t, VERSION, block.Version)
 }
 
 func TestSetHash(t *testing.T) {
-	data := "test block"
 	prevHash := []byte("prevHash")
-	block := NewBlock(data, prevHash)
+	block := NewBlock([]*Transction{}, prevHash)
 
 	block.SetHash()
 
 	timestamp := []byte(strconv.FormatInt(block.Timestamp, 10))
 	version := []byte(strconv.FormatFloat(block.Version, 'f', 2, 32))
-	headers := bytes.Join([][]byte{block.PrevBlockHash, timestamp, version, block.Data}, []byte{})
+	headers := bytes.Join([][]byte{block.PrevBlockHash, timestamp, version}, []byte{})
 	hash := sha256.Sum256(headers)
 
 	assert.Equal(t, hash[:], block.Hash)
 }
 
 func TestSerialize(t *testing.T) {
-	data := "test block"
 	prevHash := []byte("prevHash")
-	block := NewBlock(data, prevHash)
+	block := NewBlock([]*Transction{}, prevHash)
 
 	s, err := block.Serialize()
 
@@ -44,9 +41,8 @@ func TestSerialize(t *testing.T) {
 }
 
 func TestDeserializeBlock(t *testing.T) {
-	data := "test block"
 	prevHash := []byte("prevHash")
-	block := NewBlock(data, prevHash)
+	block := NewBlock([]*Transction{}, prevHash)
 
 	s, err := block.Serialize()
 	assert.Nil(t, err)
