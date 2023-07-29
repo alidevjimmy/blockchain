@@ -95,6 +95,8 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transction
 
 	tx := Transction{
 		ID: nil,
+		VIn: inputs,
+		VOut: outputs,
 	}
 
 	tx.SetID()
