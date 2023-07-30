@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -58,11 +60,11 @@ func NewBlockchain(address, name string) *Blockchain {
 	}
 }
 
-func NewGenesisBlock(coinbase *Transction) *Block {
-	return NewBlock([]*Transction{coinbase}, []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
-func (bc *Blockchain) AddBlock(txs []*Transction) *Block {
+func (bc *Blockchain) AddBlock(txs []*Transaction) *Block {
 	var lastHash []byte
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -109,10 +111,10 @@ func (bc *Blockchain) Iterator() *BlockchainInterator {
 	}
 }
 
-func (bc *Blockchain) FindUnspentTransations(address string) []Transction {
+func (bc *Blockchain) FindUnspentTransations(address string) []Transaction {
 	bci := bc.Iterator()
 	spentTXs := make(map[string][]int)
-	var unspentTXs []Transction
+	var unspentTXs []Transaction
 	for {
 		block := bci.Next()
 
@@ -128,13 +130,13 @@ func (bc *Blockchain) FindUnspentTransations(address string) []Transction {
 					}
 				}
 
-				if txOut.CanBeUnlockedWith(address) {
+				if txOut.CanBeUnlockedWith([]byte(address)) {
 					unspentTXs = append(unspentTXs, *tx)
 				}
 			}
 			if !tx.IsCoinBase() {
 				for _, txin := range tx.VIn {
-					if txin.CanUnlockOutput(address) {
+					if txin.CanUnlockOutput([]byte(address)) {
 						inTxID := hex.EncodeToString(txin.Txid)
 						spentTXs[inTxID] = append(spentTXs[inTxID], txin.Vout)
 					}
@@ -155,7 +157,7 @@ func (bc *Blockchain) FindUTXOs(address string) []TxOutput {
 
 	for _, tx := range txs {
 		for _, out := range tx.VOut {
-			if out.CanBeUnlockedWith(address) {
+			if out.CanBeUnlockedWith([]byte(address)) {
 				txOuts = append(txOuts, out)
 			}
 		}
@@ -174,7 +176,7 @@ func (bc *Blockchain) FindSpendableUTXOs(address string, amout int) (int, map[st
 	for _, tx := range txs {
 		for outIdx, out := range tx.VOut {
 			txID := hex.EncodeToString(tx.ID)
-			if out.CanBeUnlockedWith(address) && accumulated < amout {
+			if out.CanBeUnlockedWith([]byte(address)) && accumulated < amout {
 				accumulated += out.Value
 				txOuts[txID] = append(txOuts[txID], outIdx)
 				if accumulated >= amout {
@@ -184,4 +186,46 @@ func (bc *Blockchain) FindSpendableUTXOs(address string, amout int) (int, map[st
 		}
 	}
 	return accumulated, txOuts
+}
+
+func (bc *Blockchain) FindTransaction(ID []byte) (Transaction, error) {
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		for _, tx := range block.TXs {
+			if bytes.Compare(tx.ID, ID) == 0 {
+				return *tx, nil
+			}
+		}
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+
+	return Transaction{}, errors.New("Transaction is not found")
+}
+
+func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+	prevTXs := make(map[string]Transaction)
+
+	for _, vin := range tx.VIn {
+		prevTX, _ := bc.FindTransaction(vin.Txid)
+		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	}
+
+	tx.Sign(privKey, prevTXs)
+}
+
+func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
+	prevTXs := make(map[string]Transaction)
+
+	for _, vin := range tx.VIn {
+		prevTX, _ := bc.FindTransaction(vin.Txid)
+		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	}
+
+	return tx.Verify(prevTXs)
 }

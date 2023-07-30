@@ -117,13 +117,13 @@ func (cli *CLI) printChain(address, blockchainName string) {
 			fmt.Printf("TxID: %x\n", tx.ID)
 			fmt.Println("Inputs: ")
 			for _, in := range tx.VIn {
-				fmt.Println("ScriptSig: ", in.ScriptSig)
+				fmt.Println("ScriptSig: ", in.PubKey)
 				fmt.Println("TxId: ", in.Txid)
 				fmt.Println("Vout: ", in.Vout)
 			}
 			fmt.Println("Outputs: ")
 			for _, out := range tx.VOut {
-				fmt.Println("ScriptPubKey: ", out.ScriptPubKey)
+				fmt.Println("ScriptPubKey: ", out.PubKeyHash)
 				fmt.Println("Value: ", out.Value)
 			}
 		}
@@ -153,7 +153,7 @@ func (cli *CLI) send(from, to, blockchainName string, amount int) {
 
 	tx := NewUTXOTransaction(from, to, amount, bc)
 
-	bc.AddBlock([]*Transction{tx})
+	bc.AddBlock([]*Transaction{tx})
 
 	fmt.Printf("Transfer %d from %s to %s completed successfully", amount, from, to)
 }

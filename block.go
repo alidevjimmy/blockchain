@@ -15,10 +15,10 @@ type Block struct {
 	Version       float64
 	Nonce         int
 
-	TXs []*Transction
+	TXs []*Transaction
 }
 
-func NewBlock(txs []*Transction, prevBlockHash []byte) *Block {
+func NewBlock(txs []*Transaction, prevBlockHash []byte) *Block {
 	block := &Block{
 		TXs:           txs,
 		Version:       VERSION,
